@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 满语语境化句法习得系统</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #3cb9e7;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+        }
+
+        /* 新增导航栏样式 */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 1000;
+        }
+
+        .nav-title {
+            font-size: 1.8em;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-btn {
+            padding: 8px 20px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .about-btn {
+            background: var(--accent-color);
+            padding: 8px 25px;
+        }
+
+        .container {
+            text-align: center;
+            padding: 120px 30px 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-size: 3.5em;
+            color: var(--primary-color);
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .entry-btn {
+            padding: 25px 45px;
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .entry-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        /* 新增关于弹窗样式 */
+        .about-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .nav-bar {
+                padding: 0 15px;
+            }
+            .nav-btn {
+                padding: 6px 15px;
+            }
+            .title {
+                font-size: 2.5em;
+            }
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 新增导航栏 -->
+    <nav class="nav-bar">
+        <div class="nav-title"> 满语语境化句法习得系统</div>
+        <div class="nav-buttons">
+            <button class="nav-btn about-btn" onclick="showAbout()">关于我们</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="title"> 满语语境化句法习得系统</h1>
+        <div class="btn-group">
+            <button class="entry-btn" onclick="location.href='dialogue.html'">
+                <span>情景对话学习</span>
+            </button>
+            <button class="entry-btn" onclick="location.href='MANYU.html'">
+                <span>语法互动学习</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 新增关于弹窗 -->
+    <div id="aboutModal" class="about-modal">
+        <div class="modal-content">
+            <div class="modal-close" onclick="closeAbout()">&times;</div>
+            <h3>制作团队</h3>
+            <p>钟欣阳、杨铭烨、郝鑫楠、唐悦、梁燕欣</p>
+            <p>耿思涵、王晓红、娄珠琳、吕天浩、张浩然</p>
+            <p>（排名不分先后）</p>
+            <hr>
+            <p>版本号：2.1.0</p>
+            
+        </div>
+    </div>
+
+    <script>
+        // 显示关于弹窗
+        function showAbout() {
+            document.getElementById('aboutModal').style.display = 'block';
+        }
+
+        // 关闭关于弹窗
+        function closeAbout() {
+            document.getElementById('aboutModal').style.display = 'none';
+        }
+
+        // 点击外部关闭弹窗
+        window.onclick = function(event) {
+            const modal = document.getElementById('aboutModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
