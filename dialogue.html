@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>满语情景对话学习系统</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --nav-height: 60px;
+        }
+
+        /* 基础样式 */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: #f8f9fa;
+        }
+
+        /* 页面容器 */
+        .page {
+            display: none;
+            position: fixed;
+            top: var(--nav-height);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+        .page.active {
+            display: block;
+        }
+
+        /* 导航栏 */
+        #navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 1000;
+        }
+
+        .nav-title {
+            font-size: 1.8em;
+            color: var(--primary-color);
+            margin-right: auto;
+        }
+
+        .nav-btn {
+            padding: 8px 20px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            margin-left: 15px;
+        }
+
+
+        
+
+        /* 开始界面 */
+        #start-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+        }
+
+        .main-title {
+            font-size: 3.2em;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 场景选择界面 */
+        .scene-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .scene-card {
+            position: relative;
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .scene-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scene-title {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            font-size: 1.2em;
+        }
+
+        /* 对话界面 */
+        .dialogue-bg {
+            position: fixed;
+            width: 100%;
+            height: calc(100% - var(--nav-height));
+            object-fit: cover;
+            filter: brightness(0.9);
+            z-index: -1;
+        }
+
+        .dialogue-buttons {
+            display: grid;
+            gap: 15px;
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .dialogue-btn {
+            padding: 20px 35px;
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        border: 2px solid var(--secondary-color);
+        border-radius: 15px;
+        font-size: 1.1em;
+        color: var(--primary-color);
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 4px 6px rgba(52, 152, 219, 0.1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        min-width: 220px;
+    }
+
+        .dialogue-btn:hover {
+            background: linear-gradient(145deg, var(--secondary-color), #2980b9);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(52, 152, 219, 0.3);
+        border-color: transparent;
+    }
+
+        .dialogue-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+    }
+    .dialogue-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,0.3),
+            transparent
+        );
+        transition: 0.5s;
+    }
+
+    .dialogue-btn:hover::before {
+        left: 100%;
+    }
+
+    /* 按钮图标 */
+    .dialogue-btn::after {
+        content: '→';
+        font-family: 'Noto Sans Manchu';
+        font-size: 1.2em;
+        opacity: 0;
+        transition: all 0.3s;
+        position: absolute;
+        right: 20px;
+    }
+
+    .dialogue-btn:hover::after {
+        opacity: 1;
+        right: 15px;
+    }
+
+    /* 按钮文字动画 */
+    .dialogue-btn span {
+        position: relative;
+        transition: transform 0.3s;
+        display: inline-block;
+    }
+
+    .dialogue-btn:hover span {
+        transform: translateX(-10px);
+    }
+
+    /* 按钮边框动画 */
+    .dialogue-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        padding: 2px;
+        background: linear-gradient(45deg, var(--secondary-color), var(--accent-color));
+        -webkit-mask: 
+            linear-gradient(#fff 0 0) content-box, 
+            linear-gradient(#fff 0 0);
+        mask: 
+            linear-gradient(#fff 0 0) content-box, 
+            linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .dialogue-btn:hover::after {
+        opacity: 1;
+    }
+
+
+/* === 新增样式开始 === */
+/* 信息图标样式 */
+.scene-info-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scene-info-btn:hover {
+    background: var(--secondary-color);
+    color: white;
+}
+
+/* 图片模态框 */
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#modalClose {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+/* === 新增样式结束 === */
+        /* 对话框样式 */
+        .dialog-box {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            display: none;
+        }
+        /* 返回按钮特殊样式 */
+.nav-btn.back-btn, .nav-link.back-link {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    margin-right: 10px;
+}
+
+.nav-link.back-link {
+    color: #7f8c8d;
+    border: 1px solid #bdc3c7;
+}
+/* 原有信息图标和模态框样式保持不变 */
+
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+
+    <nav id="navbar">
+        <div class="nav-title">满语情景对话学习</div>
+        <div>
+            <!-- 新增返回按钮 -->
+            <button class="nav-btn back-btn" onclick="location.href='index.html'">
+                <i class="fas fa-arrow-left"></i> 返回开始界面
+            </button>
+            <button class="nav-btn" onclick="showPage('start')">首页</button>
+            <button class="nav-btn" onclick="showPage('scenes')">场景学习</button>
+        </div>
+    </nav>
+
+    <!-- 开始界面 -->
+    <div id="start-page" class="page active">
+        <h1 class="main-title">满语情景对话学习系统</h1>
+        <button class="dialogue-btn" onclick="showPage('scenes')">开始学习</button>
+    </div>
+
+    <!-- 场景选择界面 -->
+    <div id="scenes" class="page">
+        <div class="scene-selector" id="sceneContainer"></div>
+    </div>
+
+    <!-- 对话界面 -->
+    <div id="dialogue" class="page">
+        <img class="dialogue-bg" id="sceneBackground">
+        <div class="dialogue-buttons" id="dialogueButtons"></div>
+        <div class="dialog-box" id="dialogBox">
+            <div id="dialogManchu"></div>
+            <div id="dialogPron"></div>
+            <div id="dialogTrans"></div>
+            <audio id="dialogAudio"></audio>
+        </div>
+    </div>
+
+    <script>
+        // 情景对话数据
+        const SCENES = [
+            {
+                id: "family",
+                title: "家庭场景",
+                bg: "images/scenes/family.jpg",
+                infoImage: "images/details/family-detail.jpg", // 新增细节图
+                dialogues: [
+                    {
+                        text: "1.早安问候",
+                        
+                        pron: "elhe be baimbi",
+                        trans: "请安",
+                        audio: "audio/morning.mp3"
+                    },
+                    {
+                        text: "2.询问",
+                        
+                        pron: "buda be arame wajihao ?",
+                        trans: "饭做好了吗？ ",
+                        audio: "audio/eat.mp3"
+                    },
+                    {
+                    text: "3.天气提醒",
+                    
+                    pron: "Enenggi abka sukdun labdu sain",
+                    trans: "今天天气很好。",
+                    audio: "audio/tianqi.mp3"
+                    },
+                    {
+                    text: "4.关窗",
+                    
+                    pron: "si fa be dasimbi.",
+                    trans: "你把窗户关上。",
+                    audio: "audio/close_window.mp3"
+                    },
+                    {
+                    text: "5.家务劳作",
+                    
+                    pron: "tulergi de edun dambi, hvdun walgiyambi utuku be gaime dosimibi bo. ",
+                    trans: "外边刮风了，快把晾的衣服拿进来。",
+                    audio: "audio/wind_clothes.mp3"
+                    },
+                    {
+                    text: "6.个人卫生",
+                    
+                    pron: "neneme dere be obomi , amale zai amga. ",
+                    trans: "睡觉前要刷牙洗脸。",
+                    audio: "audio/hygiene.mp3"
+                    },
+                    {
+                    text: "7.睡前叮咛",
+                    
+                    pron: " Beye elhe oki.",
+                    trans: "晚安",
+                    audio: "audio/bedtime.mp3"
+                    }
+                ]
+            },
+            {
+                id: "market",
+                title: "市场场景",
+                bg: "images/scenes/market.jpg",
+                infoImage: "images/details/family-detail.jpg", // 新增细节图
+                dialogues: [
+                    {
+                    text: "1.购物询问",
+                    
+                    pron: "bi beye de aisilaci ombio?",
+                    trans: "我能帮您吗",
+                    audio: "audio/greet.mp3"
+                    },
+                    {
+                    text: "2.应答",
+                    
+                    pron: "Esi,umesi urgunjembi/ labdu bayalambi.",
+                    trans: "当然，很高兴",
+                    audio: "audio/buy_eggs_tomatoes.mp3"
+                    },
+                    {
+                    text: "3.想要物品",
+                    
+                    pron: "ai gaiki semahabi?",
+                    trans: "您想要什么？",
+                    audio: "audio/asking.mp3"
+                    },
+                    {
+                        text: "4.询问价格",
+                       
+                        pron: "ere emken yagese jiha ombi?",
+                        trans: "这个多少钱？",
+                        audio: "audio/price.mp3"
+                    },
+                
+                    {
+                    text: "5.购物结束",
+                    
+                    pron: "Ere majige be uthai gaimbi.",
+                    trans: "就买这些",
+                    audio: "audio/finish.mp3"
+                    },
+                    {
+                    text: "6.支付金额",
+                    
+                    pron: "Juwan yuwan.",
+                    trans: "十元",
+                    audio: "audio/10yuan.mp3"
+                    },
+                    {
+                    text: "7.感谢",
+                    
+                    pron: "baniha!",
+                    trans: "谢谢！",
+                    audio: "audio/thanks.mp3"
+                    }
+
+                ]
+            },
+            {id:"school",
+                title:"学校场景",
+                bg:"images/scenes/school.jpg",
+                infoImage: "images/details/family-detail.jpg", // 新增细节图
+                dialogues: [
+                {
+                text: "1.课堂开始",
+                
+                pron: "kiqen deribumbi",
+                trans: "上课",
+                audio: "audio/class_begin.mp3"
+                },
+                {
+                text: "2.向老师问好",
+                
+                pron: "taqibusi saiyyn?",
+                trans: "老师好！",
+                audio: "audio/teacher_greeting.mp3"
+                },
+                {
+                text: "3.请坐",
+                
+                pron: "teki!",
+                trans: "请坐",
+                audio: "audio/sit_down.mp3"
+                },
+                {
+                text: "4.下课",
+                
+                pron: "kiqen wajiha!",
+                trans: "下课了！",
+                audio: "audio/off_class.mp3"
+                },
+                {
+                text: "5.道别",
+                
+                pron: " taqibusi joboho!",
+                trans: "您辛苦了",
+                audio: "audio/bye.mp3"
+                },
+                {
+                text: "6.晚餐时间",
+                
+                pron: " Muse nadaci erin de yamjishvn buda jembi.",
+                trans: "我们吃七点钟晚餐",
+                audio: "audio/supper.mp3"
+                },
+                {
+                text: "7.放学告别",
+                
+                pron: "Cimari acaki.",
+                trans: "明天见。",
+                audio: "audio/meet.mp3"
+                }
+                ]
+
+            },
+          
+            {id: "hospital",
+                title: "医院场景",
+                bg: "images/scenes/hospital.jpg",
+                infoImage: "images/details/family-detail.jpg", // 新增细节图
+                dialogues: [
+                    {
+                    text: "1.描述病情",
+                    
+                    pron: "sian xeng, tere egeci xahvrugo.",
+                    trans: "大夫，他可能感冒了。",
+                    audio: "audio/cold.mp3"
+                    },
+                    {
+                    text: "2.生病时长",
+                    
+                    pron: "juo inenggi ogo, siske deri beyi (ege) icakv.",
+                    trans: "两天了，从昨天开始不舒服。",
+                    audio: "audio/time.mp3"
+                    },
+                    {                     
+                    text: "3.医嘱",
+                
+                    pron: "xahvrugo, emu ume tandambi male okto majige jevo.",
+                    trans: "是着凉了，先打一针然后再吃点药。",
+                    audio: "audio/advice.mp3"
+                    },
+                    {
+                    text: "4.用药方式询问",
+                    
+                    pron: "ere okto emu inenggi udu mudan jemie.",
+                    trans: "这药一天吃几次？",
+                    audio: "audio/medicine_asking.mp3"
+                    },
+                    
+                    {
+                    text: "5.感谢医生",
+                    manchu: "ᠣᡴᡨᠣᠰᡳ ᠪᡝ ᠠᠯᡳᠪᡠᡥᠠ ᠪᠠᠨᡳᡥᠠ！",
+                    pron: "sian xeng baniha!",
+                    trans: "谢谢医生！",
+                    audio: "audio/thanks_doctor.mp3"
+                    }
+
+                ]
+            },
+            {id: "traveling",
+                title: "旅游场景",
+                bg: "images/scenes/traveling.jpg",
+                infoImage: "images/details/family-detail.jpg", // 新增细节图
+                dialogues: [
+                {
+                text: "1.见面问好",
+               
+                pron: "Simbe sabuhade umesi urgunjembi.",
+                trans: "见到您很高兴",
+                audio: "audio/polite.mp3"
+                },
+                {
+                text: "2.欢迎",
+                
+                pron: "urgun okdoki.",
+                trans: "欢迎！",
+                audio: "audio/greet.mp3"
+                },
+                {
+                text: "3.赠礼",
+                
+                pron: "Ere oci mini beye de bure ejetun jaka.",
+                trans: "这是我送您的纪念品",
+                audio: "audio/souvenir.mp3"
+                },
+                {
+                text: "4.制品工艺询问",
+                
+                pron: "ere be ai deri araha?",
+                trans: "这是用什么制作的？",
+                audio: "audio/gongyi.mp3"
+                },
+                {
+                text: "5.制品介绍",
+               
+                pron: "Ere be suje deri araha.",
+                trans: "这是用丝绸做的。",
+                audio: "audio/silk.mp3"
+                },
+                {
+                text: "6.祝福",
+                
+                pron: "Saraxame yabure de urgungge okini.",
+                trans: "旅途愉快",
+                audio: "audio/blessing.mp3"
+                }
+                ]
+            }
+
+        ];
+
+        class ManchuLearningSystem {
+            constructor() {
+                this.initSceneSelector();
+                this.setupEventListeners();
+            }
+
+            // 修改后的initSceneSelector方法
+initSceneSelector() {
+    const container = document.getElementById('sceneContainer');
+    SCENES.forEach(scene => {
+        const card = document.createElement('div');
+        card.className = 'scene-card';
+        card.innerHTML = `
+            <img src="${scene.bg}" class="scene-image">
+            <div class="scene-title">${scene.title}</div>
+            <button class="scene-info-btn" data-img="${scene.infoImage}">
+                <i class="fas fa-info"></i>
+            </button>
+        `;
+        card.addEventListener('click', () => this.loadScene(scene));
+        container.appendChild(card);
+    });
+
+    // 新增模态框交互逻辑
+    const modal = document.getElementById('imageModal');
+    document.querySelectorAll('.scene-info-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.style.display = 'block';
+            document.getElementById('modalImage').src = btn.dataset.img;
+        });
+    });
+
+    document.getElementById('modalClose').onclick = () => modal.style.display = 'none';
+    modal.onclick = (e) => e.target === modal ? modal.style.display = 'none' : null;
+}
+
+            loadScene(scene) {
+                showPage('dialogue');
+                const bg = document.getElementById('sceneBackground');
+                const btnContainer = document.getElementById('dialogueButtons');
+                
+                bg.src = scene.bg;
+                btnContainer.innerHTML = scene.dialogues.map(d => `
+                    <button class="dialogue-btn" data-dialog='${JSON.stringify(d)}'>
+                        ${d.text}
+                    </button>
+                `).join('');
+            }
+
+            setupEventListeners() {
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('dialogue-btn')) {
+                        const dialog = JSON.parse(e.target.dataset.dialog);
+                        this.showDialog(dialog);
+                    }
+                });
+            }
+
+            showDialog(dialog) {
+                const box = document.getElementById('dialogBox');
+                box.style.display = 'block';
+                document.getElementById('dialogManchu').textContent = dialog.manchu;
+                document.getElementById('dialogPron').textContent = `[${dialog.pron}]`;
+                document.getElementById('dialogTrans').textContent = dialog.trans;
+                
+                const audio = document.getElementById('dialogAudio');
+                audio.src = dialog.audio;
+                audio.play();
+            }
+        }
+
+        // 页面控制
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            switch(page) {
+                case 'start':
+                    document.getElementById('start-page').classList.add('active');
+                    break;
+                case 'scenes':
+                    document.getElementById('scenes').classList.add('active');
+                    break;
+                case 'dialogue':
+                    document.getElementById('dialogue').classList.add('active');
+                    break;
+            }
+        }
+        // 鼠标悬停动画
+document.querySelectorAll('.nav-btn, .nav-link').forEach(item => {
+    item.addEventListener('mouseover', () => {
+        item.style.transform = 'scale(1.05)';
+    });
+    item.addEventListener('mouseout', () => {
+        item.style.transform = 'scale(1)';
+    });
+});
+
+// 移动端触摸反馈
+document.querySelectorAll('.nav-btn, .nav-link').forEach(item => {
+    item.addEventListener('touchstart', () => {
+        item.style.opacity = '0.8';
+    });
+    item.addEventListener('touchend', () => {
+        item.style.opacity = '1';
+    });
+});
+// 记录用户最后访问的页面
+window.addEventListener('beforeunload', () => {
+    localStorage.setItem('lastPage', window.location.pathname);
+});
+
+// 页面加载时恢复状态
+window.onload = () => {
+    const lastPage = localStorage.getItem('lastPage');
+    if (lastPage && lastPage !== window.location.pathname) {
+        window.location.href = lastPage;
+    }
+};
+
+        // 初始化系统
+        window.onload = () => {
+            new ManchuLearningSystem();
+            showPage('start');
+        }
+    </script>
+    <!-- 新增图片模态框 -->
+    <div class="image-modal" id="imageModal">
+        <span id="modalClose">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+</body>
+</html>

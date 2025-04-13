@@ -1,0 +1,1737 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>满语互动学习系统</title>
+    <style>
+        :root {
+            --sidebar-width: 240px;
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --highlight-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Noto Sans Manchu', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+
+        /* 侧边栏样式 */
+        #sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--primary-color);
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .scene-btn {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 8px 10px;
+            padding: 12px 20px;
+            color: white;
+            text-align: left;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scene-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .scene-btn.active {
+            background: var(--secondary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* 主内容区 */
+        #main-content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+        }
+
+        /* 场景容器 */
+        .scene-container {
+            position: relative;
+            width: 100%;
+            height: 75vh;
+            min-height: 600px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        /* 信息面板 */
+        #info-panel {
+            position: fixed;
+            top: 40px;
+            right: 20px;
+            width: 320px;
+            background: rgba(255,255,255,0.98);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+            max-height: 90vh;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        /* 满文样式 */
+        .manchu-font {
+            font-family: 'Noto Sans Manchu', sans-serif;
+            font-size: 2.2em;
+            line-height: 1.3;
+            color: var(--primary-color);
+        }
+
+        /* 信息面板内容 */
+        .header-section {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .word-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .pronunciation {
+            font-size: 1.1em;
+            color: #7f8c8d;
+        }
+
+        .chinese {
+            background: var(--secondary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* 语法模块 */
+        .grammar-module {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .module-title {
+            font-size: 1.1em;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .grammar-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .grammar-item {
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* SOV结构 */
+        .sov-flow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .sov-node {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .sov-arrow {
+            font-size: 1.5em;
+            color: #95a5a6;
+        }
+
+        /* 热点样式 */
+        .hotspot {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: rgba(1, 135, 252, 0.9);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
+        .hotspot:hover {
+            transform: scale(1.25);
+            box-shadow: 0 0 12px rgba(255, 193, 7, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <div id="main-content">
+        <div class="scene-container"></div>
+    </div>
+    
+    <div id="info-panel">
+        <div class="header-section">
+            <div class="manchu-font" id="item-manchu"></div>
+            <div class="word-meta">
+                <span class="pronunciation" id="item-pron"></span>
+                <span class="chinese" id="item-name"></span>
+            </div>
+        </div>
+
+        <div class="grammar-module">
+            <div class="module-title">词根分析</div>
+            <div class="grammar-grid">
+                <div class="grammar-item">
+                    <div class="grammar-label">词根</div>
+                    <div class="manchu-font-sm" id="grammar-root"></div>
+                </div>
+                <div class="grammar-item">
+                    <div class="grammar-label">后缀</div>
+                    <div id="grammar-suffixes"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grammar-module">
+            <div class="module-title">语法功能</div>
+            <div class="grammar-grid">
+                <div class="grammar-item">
+                    <div class="grammar-label">格标记</div>
+                    <div id="grammar-case"></div>
+                </div>
+                <div class="grammar-item">
+                    <div class="grammar-label">时态</div>
+                    <div id="grammar-tense"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grammar-module">
+            <div class="module-title">语序结构 (SOV)</div>
+            <div class="sov-flow" id="sov-structure"></div>
+            <div class="sov-example" id="sov-example"></div>
+        </div>
+    </div>
+
+    <script>
+        // 场景配置数据
+        const SCENES = {
+            livingRoom: {
+                name: "卧室",
+                background: "images/bedroom.png",
+                items: [
+                    {
+                        position: { x: "45%", y: "60%" },
+                        data: {
+                            name: "床",
+                            manchu: "",
+                            pron: "besergen",
+                            grammar: {
+                                root: "无",
+                                suffixes: ["无"],
+                                particles: [
+                                    { form: "de", type: "case", label: "方位格" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "present",
+                                    label: "现在时"
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "besergen", role: "主语" },
+                                        { manchu: "de", role: "方位格" },
+                                        { manchu: "tafambi", role: "谓语" }
+                                    ],
+                                    example: "besergen de tafambi（上床）"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "75%", y: "50%" },
+                        data: {
+                            name: "台灯",
+                            manchu: "",
+                            pron: "hiyabun(古词新用)",
+                            grammar: {
+                                root: "无",
+                                suffixes: ["无"],
+                                particles: [
+                                    {}
+                                ],
+                                tense:{
+                                    form:"",
+                                    type:"present",
+                                    label:"现在时"
+                                },
+                                sov: {
+                                    structure:[
+                                        
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "41%", y: "5%" },
+                        data: {
+                            name: "顶灯",
+                            manchu: "",
+                            pron: "abkai dengjan",
+                            grammar: {
+                                root: "",
+                                suffixes: ["无"],
+                                particles: [
+                                    {}
+                                ],
+                                tense:{
+                                   
+                                },
+                                sov: {
+                                    structure:[
+                                        {manchu:"abkai(位置在顶部的)",role:"定语"},
+                                        {manchu:"dengjan(灯)",role:"主语"},
+                                        
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "18%", y: "30%" },
+                        data: {
+                            name: "推窗",
+                            manchu: "",
+                            pron: "anakv fa",
+                            grammar: {
+                                root: "",
+                                suffixes: ["无"],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense:{
+                                    form:"",
+                                    type:"",
+                                    label:""
+                                },
+                                sov: {
+                                    structure:[
+                                        {manchu:"",role:"主语"},
+                                        {manchu:" ",role:"宾语"},
+                                        {manchu:"",role:"谓语"}
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "5%", y: "75%" },
+                        data: {
+                            name: "插座",
+                            manchu: "",
+                            pron: "sisibukū",
+                            grammar: {
+                                root: "",
+                                suffixes: ["无"],
+                                particles: [
+                                    { form:"", type: "", label: "" }
+                                ],
+                                tense:{
+                                    form:"",
+                                    type:"",
+                                    label:""
+                                },
+                                sov: {
+                                    structure:[
+                                        {manchu:"",role:"主语"},
+                                        {manchu:" ",role:"宾语"},
+                                        {manchu:"",role:"谓语"}
+                                    ],
+                                    example: "   "
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            kitchen: {
+                name: "厨房",
+                background: "images/kitchen.png",
+                items: [
+                    {
+                        position: { x: "40%", y: "65%" },
+                        data: {
+                            name: "茶杯",
+                            manchu: "",
+                            pron: "misan",
+                            grammar: {
+                                root: "",
+                                suffixes: ["无"],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "" },
+                                        { manchu: "", role: "" },
+                                        { manchu: "", role: "" }
+                                    ],
+                                    example: "   "
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "15%", y: "65%" },
+                        data: {
+                            name: "餐具",
+                            manchu: "ᠠᠯᡳᠨ ᠪᠣᠯᠣ",
+                            pron: "budai belheku",
+                            grammar: {
+                                root: "",
+                                suffixes: [""],
+                                particles: [
+                                    { form: "i", type: "case", label: "工具格" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: " ", role: "宾语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "55%", y: "73%" },
+                        data: {
+                            name: "盘子",
+                            manchu: "",
+                            pron: "aliku",
+                            grammar: {
+                                root: " ",
+                                suffixes: ["无"],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: "", role: "宾语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "55%", y: "30%" },
+                        data: {
+                            name: "橱柜",
+                            manchu: "",
+                            pron: "horho",
+                            grammar: {
+                                root: "",
+                                suffixes: [" "],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "ᡴᠣᠪᠣᠯᡳ", role: "主语" },
+                                        { manchu: "ᠵᠠᡴᠠ", role: "宾语" },
+                                        { manchu: "ᠠᠰᡳ᠍ᡥᠠᠪᡳ", role: "谓语" }
+                                    ],
+                                    example: "ᡴᠣᠪᠣᠯᡳ ᠨᡳ ᠵᠠᡴᠠ ᠠᠰᡳ᠍ᡥᠠᠪᡳ（橱柜里有餐具）"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "80%", y: "78%" },
+                        data: {
+                            name: "洗手池",
+                            manchu: "",
+                            pron: "obohon",
+                            grammar: {
+                                root: "",
+                                suffixes: [""],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: "", role: "宾语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "33%", y: "70%" },
+                        data: {
+                            name: "锅",
+                            manchu: "ᡶᠣᠯᠣᡥᠣᠨ",
+                            pron: "hacuhan",
+                            grammar: {
+                                root: "",
+                                suffixes: [""],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: "", role: "宾语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            bathroom:{
+                name: "洗手间",
+                background: "images/bathroom.png",
+                items: [
+                {
+                    "position": {"x": "40%", "y": "82%"},
+                    "data": {
+                        "name": "马桶",
+                        "manchu": "",
+                        "pron": "edun hunio",
+                        "grammar": {
+                            "root": "",
+                            "suffixes": [""],
+                            "particles": [
+                                {"form": "ᡝ", "type": "", "label": ""}
+                            ],
+                            "tense": {
+                                "form": "",
+                                "type": "",
+                                "label": ""
+                            },
+                            "sov": {
+                                "structure": [
+                                    {"manchu": "", "role": "主语"},
+                                    {"manchu": " ", "role": "宾语"},
+                                    {"manchu": "", "role": "谓语"}
+                                ],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                {
+                    "position": { "x": "5%", "y": "82%" },
+                    "data": {
+                        "name": "洗衣机",
+                        "manchu": "",
+                        "pron": "etuku obotun",
+                        "grammar": {
+                            "root": "etuku(衣服)",
+                            "suffixes": [""],
+                            "particles": [
+                                { "form": "", "type": "", "label": "" },
+                                { "form": "", "type": "", "label": "" }
+                            ],
+                            "tense": {
+                                "form": "",
+                                "type": "",
+                                "label": ""
+                            },
+                            "sov": {
+                                "structure": [
+                                    { "manchu": "", "role": "主语" },
+                                    { "manchu": "", "role": "宾语" },
+                                    { "manchu": "", "role": "谓语" }
+                                ],
+                                "example": " "
+                            },
+                            "note": "现代新创词"
+                        }
+                    }
+                },
+                {
+                    "position": { "x": "85%", "y": "15%" },
+                    "data": {
+                        "name": "淋浴",
+                        "manchu": "",
+                        "pron": "fusufulembi",
+                        "grammar": {
+                            "root": "",
+                            "suffixes": ["-mbi(动词后缀)"],
+                            "particles": [
+                                { "form": "", "type": "", "label": "" },
+                                { "form": "", "type": "", "label": "" }
+                            ],
+                            "tense": {
+                                "form": "",
+                                "type": "",
+                                "label": ""
+                            },
+                            "sov": {
+                                "structure": [
+                                    { "manchu": "", "role": "主语" },
+                                    { "manchu": " ", "role": "宾语" },
+                                    { "manchu": "", "role": "谓语" }
+                                ],
+                                "example": ""
+                            },
+                            
+                        }
+                    }
+                },
+                {
+                        "position": { "x": "35%", "y": "50%" },
+                        "data": {
+                            "name": "架子",
+                            "manchu": "",
+                            "pron": "lakiyakv",
+                            "grammar": {
+                                "root": "",
+                                "suffixes": [""],
+                                "particles": [
+                                    { "form": "", "type": "", "label": "" },
+                                    { "form": "", "type": "", "label": "" }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { "manchu": "", "role": "主语" },
+                                        { "manchu": "", "role": "宾语" },
+                                        { "manchu": "", "role": "谓语" }
+                                    ],
+                                    "example": ""
+                                },
+                                
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "60%", y: "68%" },
+                        data: {
+                            name: "盆栽",
+                            manchu: "",
+                            pron: "fengse i tuwabun",
+                            grammar: {
+                                root: "",
+                                suffixes: ["i(属格后缀)"],
+                                particles: [
+                                    { form: "i", type: "case", label: "属格" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: "", role: "宾语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: " "
+                                }
+                            }
+                        }
+                    }
+                ]
+
+            },
+            livingroom:{
+                name: "客厅",
+                background: "images/livingroom.png",
+                items: [
+                                        {
+                        "position": { "x": "5%", "y": "80%" },
+                        "data": {
+                            "name": "沙发",
+                            "manchu": "",
+                            "pron": "sesergen",
+                            "grammar": {
+                                "root": " ",
+                                "suffixes": [],
+                                "particles": [
+                                    { "form": "", "type": "", "label": "" }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { "manchu": "", "role": "主语" },
+                                        { "manchu": "", "role": "宾语" },
+                                        { "manchu": "", "role": "谓语" }
+                                    ],
+                                    "example": "   "
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "position": { "x": "43%", "y": "60%" },
+                        "data": {
+                            "name": "椅子",
+                            "manchu": "",
+                            "pron": "Nikeku mulan",
+                            "grammar": {
+                                "root": " (坐具)",
+                                "suffixes": [],
+                                "particles": [
+                                    { "form": "", "type": "", "label": "" }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { "manchu": "", "role": "主语" },
+                                        { "manchu": "", "role": "宾语" },
+                                        { "manchu": "", "role": "谓语" }
+                                    ],
+                                    "example": "   "
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "position": { "x": "25%", "y": "50%" },
+                        "data": {
+                            "name": "电视机",
+                            "manchu": " ",
+                            "pron": "jucutun",
+                            "grammar": {
+                                "root": " ()",
+                                "suffixes": [" "],
+                                "particles": [
+                                    { "form": "", "type": "case", "label": "方位格" },
+                                    { "form": "", "type": "case", "label": "宾格" }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { "manchu": "", "role": "主语" },
+                                        { "manchu": " ", "role": "宾语" },
+                                        { "manchu": "", "role": "谓语" }
+                                    ],
+                                    "example": "    "
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "75%", y: "30%" },
+                        data: {
+                            name: "书架",
+                            manchu: "ᠪᡳᡨᡥᡝ ᡳᠯᡥᠠ",
+                            pron: "bithe i hiyadan",
+                            grammar: {
+                                root: " bithe(书) +  hiyadan(柜子)",
+                                suffixes: [" "],
+                                particles: [
+                                    { form: "i", type: "case", label: "工具格" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: " ", role: "宾语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: "   "
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "75%", y: "65%" },
+                        data: {
+                            name: "餐桌",
+                            manchu: "ᠪᡠᡩᠠ ᡩᡝᠶᡝ",
+                            pron: "dere",
+                            grammar: {
+                                root: "",
+                                suffixes: [""],
+                                particles: [
+                                    { form: "", type: "", label: "" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: " ", role: "处所状语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        position: { x: "50%", y: "70%" },
+                        data: {
+                            name: "地毯",
+                            manchu: "",
+                            pron: "falangga keibisu",
+                            grammar: {
+                                root: " falangga(地上的) +keibisu(毯子)",
+                                suffixes: [" "],
+                                particles: [
+                                    { form: "", type: "case", label: "方位格" }
+                                ],
+                                tense: {
+                                    form: "",
+                                    type: "",
+                                    label: ""
+                                },
+                                sov: {
+                                    structure: [
+                                        { manchu: "", role: "主语" },
+                                        { manchu: " ", role: "处所状语" },
+                                        { manchu: "", role: "谓语" }
+                                    ],
+                                    example: "  "
+                                }
+                            }
+                        }
+                    },
+
+                ]
+            },
+            fishing:{
+                name: "打渔",
+                background: "images/fishing.png",
+                items: [
+                {
+                    position: { x: "55%", y: "67%" },
+                    data: {
+                        name: "鱼",
+                        manchu: "",
+                        pron: "nimaha",
+                        grammar: {
+                            root: ")",
+                            suffixes: [" "],
+                            particles: [
+                                { form: "", type: "", label: "" },
+                                { form: "", type: "", label: "" }
+                            ],
+                            sov: {
+                                structure: [
+                                    { manchu: "bi", role: "主语" },
+                                    { manchu: "nimaha", role: "宾语" },
+                                    { form: "be", role: "格助词" },
+                                    { manchu: "jembi", role: "谓语" }
+                                ],
+                                example: "bi nimaha be jembi(我吃鱼)"
+                            },
+                            
+                        }
+                    }
+                },
+                {
+                    position: { x: "75%", y: "65%" },
+                    data: {
+                        name: "捕鱼",
+                        manchu: " ",
+                        pron: "nimaha butambi",
+                        grammar: {
+                            root: "nimaha (鱼) + butambi (猎/捕)",
+                            suffixes: [
+                                "-mbi (动词现在时后缀)",
+                               
+                            ],
+                            particles: [
+                                { form: "be", type: "case", label: "宾格" },
+                                
+                                
+                            ],
+                            tense: {
+                                form: "",
+                                type: "",
+                                label: ""
+                            },
+                            sov: {
+                                structure: [
+                                    { form: "bi", role: "主语" },
+                                    { manchu: "nimaha", role: "宾语" },
+                                    { form: "be", role: "格助词" },
+                                    { manchu: "butambi", role: "谓语" },
+                                    
+
+                                ],
+                                example: "bi nimaha be butambi（我捕鱼）"
+                            },
+                            special_note: {
+                                text: "butambi 可单独表示狩猎行为",
+                                manchu: "  ",
+                                trans: " "
+                            }
+                        }
+                    }
+                },
+                {
+                    position: { x: "55%", y: "63%" },
+                    data: {
+                        name: "抄网",
+                        manchu: " ",
+                        pron: "xodokv",
+                        grammar: {
+                            root: "  ",
+                            suffixes: [""],
+                            particles: [
+                                { form: "", type: "case", label: "工具格" }
+                            ],
+                            tense: {
+                                form: "",
+                                type: "",
+                                label: ""
+                            },
+                            sov: {
+                                structure: [
+                                    { manchu: "", role: "主语" },
+                                    { manchu: " ", role: "工具" },
+                                    { manchu: "", role: "谓语" }
+                                ],
+                                example: ""
+                            }
+                        }
+                    }
+                },
+                {
+                    position: { x: "40%", y: "85%" },
+                    data: {
+                        name: "网",
+                        manchu: "",
+                        pron: "asu",
+                        grammar: {
+                            root: "",
+                            suffixes: [" "],
+                            particles: [
+                                { form: "", type: "", label: "" }
+                            ],
+                            tense: {
+                                form: "",
+                                type: "",
+                                label: ""
+                            },
+                            sov: {
+                                structure: [
+                                    { manchu: "", role: "主语" },
+                                    { manchu: "", role: "工具" },
+                                    { manchu: "", role: "谓语" }
+                                ],
+                                example: "    "
+                            }
+                        }
+                    }
+                },
+                {
+                    position: { x: "60%", y: "90%" },
+                    data: {
+                        name: "江水",
+                        manchu: "  ",
+                        pron: "deben",
+                        grammar: {
+                            root: "",
+                            suffixes: [""],
+                            particles: [
+                                { form: "", type: "", label: "" }
+                            ],
+                            tense: {
+                                form: "",
+                                type: "",
+                                label: ""
+                            },
+                            sov: {
+                                structure: [
+                                    { manchu: "", role: "处所" },
+                                    { manchu: "", role: "主语" },
+                                    { manchu: "", role: "谓语" }
+                                ],
+                                example: ""
+                            }
+                        }
+                    }
+                },
+                {
+                    position: { x: "95%", y: "75%" },
+                    data: {
+                        name: "冰层",
+                        manchu: "",
+                        pron: "	borinahabi",
+                        grammar: {
+                            root: "",
+                            suffixes: [" "],
+                            particles: [
+                                { form: "", type: "", label: "" }
+                            ],
+                            tense: {
+                                form: "",
+                                type: "",
+                                label: ""
+                            },
+                            sov: {
+                                structure: [
+                                    { manchu: " ", role: "处所" },
+                                    { manchu: "", role: "存在物" },
+                                    { manchu: "", role: "谓语" }
+                                ],
+                                example: ""
+                            }
+                        }
+                    }
+                },
+                {
+                    position: { x: "80%", y: "5%" },
+                    data: {
+                        name: "天空",
+                        manchu: "",
+                        pron: "abka",
+                        grammar: {
+                            root: "",
+                            suffixes: [""],
+                            particles: [
+                                { form: "", type: "", label: "" }
+                            ],
+                            tense: {
+                                form: "",
+                                type: "",
+                                label: ""
+                            },
+                            sov: {
+                                structure: [
+                                    { manchu: "", role: "主语" },
+                                    { manchu: " ", role: "处所" },
+                                    { manchu: "", role: "谓语" }
+                                ],
+                                example: " "
+                            }
+                        }
+                    }
+                }
+                ]
+            },
+            hunting:{
+                name: "骑射",
+                background: "images/hunting.png",
+                items: [
+                {
+                        "position": {
+                            "x": "80%",
+                            "y": "78%"
+                        },
+                        "data": {
+                            "name": "草原（水草甸子）",
+                            "manchu": " ",
+                            "pron": "niyo i ba",
+                            "grammar": {
+                                "root": "niyo(沼泽地)+ba(地面，土地)",
+                                "suffixes": [" "],
+                                "particles": [
+                                    {
+                                        "form": "i",
+                                        "type": "case",
+                                        "label": "属格"
+                                    }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        {
+                                            "manchu": "",
+                                            "role": ""
+                                        },
+                                        {
+                                            "manchu": " ",
+                                            "role": ""
+                                        },
+                                        {
+                                            "manchu": "",
+                                            "role": ""
+                                        }
+                                    ],
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "position": {
+                            "x": "65%",
+                            "y": "78%"
+                        },
+                        "data": {
+                            "name": "马",
+                            "manchu": "",
+                            "pron": "morin",
+                            "grammar": {
+                                "root": "",
+                                "suffixes": [],
+                                "particles": [
+                                    {
+                                        "form": "",
+                                        "type": "",
+                                        "label": ""
+                                    }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        {
+                                            "manchu": "",
+                                            "role": "主语"
+                                        },
+                                        {
+                                            "manchu": "",
+                                            "role": "宾语"
+                                        },
+                                        {
+                                            "manchu": "",
+                                            "role": "谓语"
+                                        }
+                                    ],
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "position": { 
+                            "x": "73%", 
+                            "y": "17%" 
+                        },
+                        "data": {
+                            "name": "弓箭",
+                            "manchu": "",
+                            "pron": "beri sirdan",
+                            "grammar": {
+                                "root": "beri(弓)",
+                                "suffixes": [],
+                                "particles": [
+                                    { 
+                                        "form": "be", 
+                                        "type": "case", 
+                                        "label": "宾格助词" 
+                                    }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { 
+                                            "manchu": "si", 
+                                            "role": "主语" 
+                                        },
+                                        { 
+                                            "manchu": "beri sirdan", 
+                                            "role": "宾语" 
+                                        },
+                                        { 
+                                            "manchu": "bi", 
+                                            "role": "谓语" 
+                                        }
+                                    ],
+                                    "example": "si beri sirdanbe bi(我有弓箭)"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "position": { 
+                            "x": "40%", 
+                            "y": "15%" 
+                        },
+                        "data": {
+                            "name": "暖帽",
+                            "manchu": "",
+                            "pron": "boro",
+                            "grammar": {
+                                "root": "",
+                                "suffixes": [""],
+                                "particles": [
+                                    { 
+                                        "form": "", 
+                                        "type": "", 
+                                        "label": "" 
+                                    }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { 
+                                            "manchu": "", 
+                                            "role": "" 
+                                        },
+                                        { 
+                                            "manchu": " ", 
+                                            "role": "" 
+                                        },
+                                        { 
+                                            "manchu": "", 
+                                            "role": "" 
+                                        }
+                                    ],
+                                    "example": ""
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "position": { 
+                            "x": "50%", 
+                            "y": "50%" 
+                        },
+                        "data": {
+                            "name": "缺襟袍（方便骑行的）",
+                            "manchu": "ᠴᡳᡶᡠ",
+                            "pron": "bigan i sijigiyan",
+                            "grammar": {
+                                "root": "bigan(野外)+sijigiyan(袍子)",
+                                "suffixes": [""],
+                                "particles": [
+                                    { 
+                                        "form": "i", 
+                                        "type": "case", 
+                                        "label": "属格助词" 
+                                    }
+                                ],
+                                "tense": {
+                                    "form": "",
+                                    "type": "",
+                                    "label": ""
+                                },
+                                "sov": {
+                                    "structure": [
+                                        { 
+                                            "manchu": "", 
+                                            "role": "" 
+                                        },
+                                        { 
+                                            "manchu": "", 
+                                            "role": "" 
+                                        },
+                                        { 
+                                            "manchu": "", 
+                                            "role": "" 
+                                        }
+                                    ],
+                                    "example": ""
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        };
+
+
+        class ManchuLearningSystem {
+            constructor() {
+                this.initSidebar();
+                this.loadScene('livingRoom');
+                this.setupEventListeners();
+            }
+
+            initSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                Object.entries(SCENES).forEach(([id, scene], index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `scene-btn ${index === 0 ? 'active' : ''}`;
+                    btn.textContent = scene.name;
+                    btn.onclick = () => this.loadScene(id);
+                    sidebar.appendChild(btn);
+                });
+            }
+
+            loadScene(sceneId) {
+                const scene = SCENES[sceneId];
+                const container = document.querySelector('.scene-container');
+                
+                // 更新场景背景
+                container.style.backgroundImage = `url(${scene.background})`;
+                container.innerHTML = '';
+
+                // 创建热点元素
+                scene.items.forEach(item => {
+                    const hotspot = this.createHotspot(item);
+                    container.appendChild(hotspot);
+                });
+
+                // 更新侧边栏状态
+                document.querySelectorAll('.scene-btn').forEach(btn => 
+                    btn.classList.remove('active'));
+                document.querySelector(`.scene-btn[data-scene="${sceneId}"]`)
+                    ?.classList.add('active');
+            }
+
+            createHotspot(item) {
+                const hotspot = document.createElement('div');
+                hotspot.className = 'hotspot';
+                hotspot.style.left = item.position.x;
+                hotspot.style.top = item.position.y;
+                hotspot.dataset.item = JSON.stringify(item.data);
+                return hotspot;
+            }
+
+            setupEventListeners() {
+                // 热点点击事件
+                document.querySelector('.scene-container').addEventListener('click', e => {
+                    if (e.target.classList.contains('hotspot')) {
+                        this.showInfoPanel(JSON.parse(e.target.dataset.item));
+                    }
+                });
+
+                // 点击外部关闭面板
+                document.addEventListener('click', e => {
+                    if (!e.target.closest('#info-panel') && !e.target.classList.contains('hotspot')) {
+                        document.getElementById('info-panel').style.display = 'none';
+                    }
+                });
+            }
+
+            showInfoPanel(data) {
+                const panel = document.getElementById('info-panel');
+                panel.style.display = 'block';
+
+                // 基础信息
+                document.getElementById('item-manchu').textContent = data.manchu;
+                document.getElementById('item-pron').textContent = data.pron;
+                document.getElementById('item-name').textContent = data.name;
+
+                // 语法信息
+                this.updateGrammarInfo(data.grammar);
+            }
+
+            updateGrammarInfo(grammar) {
+                // 词根分析
+                document.getElementById('grammar-root').textContent = grammar.root;
+                this.populateList('#grammar-suffixes', grammar.suffixes);
+
+                // 语法功能
+                this.updateGrammarSection('#grammar-case', grammar.particles);
+                this.updateGrammarSection('#grammar-tense', grammar.tense);
+
+                // SOV结构
+                this.updateSOV(grammar.sov);
+            }
+
+            updateGrammarSection(selector, data) {
+                const container = document.querySelector(selector);
+                container.innerHTML = Array.isArray(data) 
+                    ? data.map(d => `
+                        <div class="grammar-tag">
+                            <span class="manchu">${d.form}</span>
+                            <span class="label">${d.label}</span>
+                        </div>
+                    `).join('')
+                    : `
+                        <div class="grammar-tag">
+                            <span class="manchu">${data.form}</span>
+                            <span class="label">${data.label}</span>
+                        </div>
+                    `;
+            }
+
+            updateSOV(sovData) {
+                const structureContainer = document.getElementById('sov-structure');
+                const exampleContainer = document.getElementById('sov-example');
+                
+                // 构建SOV流程图
+                structureContainer.innerHTML = sovData.structure
+                    .map((item, index) => `
+                        ${index > 0 ? '<div class="sov-arrow">→</div>' : ''}
+                        <div class="sov-node">
+                            <div class="manchu">${item.manchu}</div>
+                            <div class="role">${item.role}</div>
+                        </div>
+                    `).join('');
+
+                // 示例句子
+                exampleContainer.innerHTML = `
+                    <div class="example-manchu">${sovData.example.split('（')[0]}</div>
+                    <div class="translation">${sovData.example.split('（')[1].replace('）', '')}</div>
+                `;
+            }
+
+            populateList(selector, items) {
+                const container = document.querySelector(selector);
+                container.innerHTML = items.map(item => `
+                    <div class="grammar-item">
+                        <span class="manchu">${item.split(' ')[0]}</span>
+                        <span class="explanation">${item.split(' ')[1]}</span>
+                    </div>
+                `).join('');
+            }
+        }
+        // 鼠标悬停动画
+document.querySelectorAll('.nav-btn, .nav-link').forEach(item => {
+    item.addEventListener('mouseover', () => {
+        item.style.transform = 'scale(1.05)';
+    });
+    item.addEventListener('mouseout', () => {
+        item.style.transform = 'scale(1)';
+    });
+});
+
+// 移动端触摸反馈
+document.querySelectorAll('.nav-btn, .nav-link').forEach(item => {
+    item.addEventListener('touchstart', () => {
+        item.style.opacity = '0.8';
+    });
+    item.addEventListener('touchend', () => {
+        item.style.opacity = '1';
+    });
+});
+// 记录用户最后访问的页面
+window.addEventListener('beforeunload', () => {
+    localStorage.setItem('lastPage', window.location.pathname);
+});
+
+// 页面加载时恢复状态
+window.onload = () => {
+    const lastPage = localStorage.getItem('lastPage');
+    if (lastPage && lastPage !== window.location.pathname) {
+        window.location.href = lastPage;
+    }
+};
+
+        // 初始化系统
+        window.onload = () => new ManchuLearningSystem();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>满语情景式互动科普</title>
+    <style>
+        /* 新增导航栏样式 */
+        #navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-title {
+            font-size: 1.8em;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-right: 40px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-link {
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(44, 62, 80, 0.1);
+        }
+
+        /* 新增开始界面样式 */
+        #start-screen {
+            position: fixed;
+            top: 60px; /* 留出导航栏空间 */
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 40px;
+        }
+
+        .hero-title {
+            font-size: 3.5em;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .start-button {
+            padding: 16px 45px;
+            font-size: 1.2em;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        /* 调整原有内容 */
+        #main-content {
+            margin-top: 60px; /* 为导航栏留出空间 */
+        }
+
+        /* 隐藏侧边栏初始状态 */
+        #sidebar {
+            display: none;
+        }
+        /* 返回按钮特殊样式 */
+.nav-btn.back-btn, .nav-link.back-link {
+    background: linear-gradient(135deg, #ffffff, #ffffff);
+    margin-right: 10px;
+}
+
+.nav-link.back-link {
+    color: #000000;
+    border: 1px solid #ffffff;
+}
+    </style>
+</head>
+<body>
+    <!-- 新增导航栏 -->
+    <nav id="navbar">
+        <div class="nav-title">满语情景式互动科普</div>
+        <div class="nav-links">
+            <!-- 新增返回按钮 -->
+            <div class="nav-link back-link" onclick="location.href='index.html'">
+                <i class="fas fa-arrow-left"></i> 返回开始页面
+            </div>
+            <div class="nav-link" onclick="showStartScreen()">首页</div>
+            <div class="nav-link" onclick="startLearning()">场景学习</div>
+            <div class="nav-link" onclick="showAbout()">关于</div>
+        </div>
+    </nav>
+
+    <!-- 新增开始界面 -->
+    <div id="start-screen">
+        <h1 class="hero-title">探索满语文化<br>开启情景式学习之旅</h1>
+        <button class="start-button" onclick="startLearning()">开始学习</button>
+    </div>
+
+    <!-- 原有内容保持不变 -->
+    <div id="sidebar"></div>
+    <div id="main-content">
+        <div class="scene-container"></div>
+    </div>
+    
+    <div id="info-panel">
+        <!-- 原有信息面板内容 -->
+    </div>
+
+    <script>
+        // 新增控制逻辑
+        function showStartScreen() {
+            document.getElementById('start-screen').style.display = 'flex';
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('main-content').style.display = 'none';
+        }
+
+        function startLearning() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'block';
+            document.getElementById('main-content').style.display = 'block';
+            // 确保场景正确加载
+            if (!window.manchuSystem) {
+                window.manchuSystem = new ManchuLearningSystem();
+            }
+        }
+
+        function showAbout() {
+            alert("满语情景式互动科普\n版本 1.0\n版权所有 © 2023\n制作团队\n钟欣阳 杨铭烨 唐悦\n郝鑫楠 梁燕欣 王晓红\n耿思涵 吕天浩 张浩然 娄珠琳\n（排名不分先后） ");
+        }
+
+        // 修改原有初始化逻辑
+        window.onload = () => {
+            showStartScreen();
+            // 预初始化系统但不显示
+            window.manchuSystem = new ManchuLearningSystem();
+        }
+    </script>
+</body>
+</html>
+<style>
+    /* 调整导航栏和主内容区样式 */
+    #navbar {
+        height: 56px; /* 优化高度 */
+        padding: 0 20px; /* 减小左右间距 */
+    }
+    
+    /* 主内容区增加安全边距 */
+    #main-content {
+        margin: 76px 0 0 var(--sidebar-width); /* 顶部留出导航栏空间 */
+        padding: 30px;
+        position: relative; /* 确保内容层级 */
+        z-index: 1; /* 低于导航栏 */
+    }
+    
+    /* 调整场景容器高度 */
+    .scene-container {
+        height: calc(100vh - 126px); /* 动态计算高度 */
+        min-height: auto; /* 移除固定最小高度 */
+    }
+    
+    /* 侧边栏位置调整 */
+    #sidebar {
+        top: 56px; /* 下移避开导航栏 */
+        height: calc(100vh - 56px); /* 动态计算高度 */
+    }
+    
+    /* 开始界面定位修正 */
+    #start-screen {
+        top: 56px; /* 匹配导航栏高度 */
+        padding-top: 80px; /* 增加顶部内边距 */
+    }
+    </style>
+    
+    <script>
+    // 在ManchuLearningSystem类中添加场景高度适配
+    class ManchuLearningSystem {
+        constructor() {
+            this.adjustLayout();
+            window.addEventListener('resize', () => this.adjustLayout());
+            // 其他原有初始化代码...
+        }
+    
+        adjustLayout() {
+            const navHeight = document.getElementById('navbar').offsetHeight;
+            document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+        }
+    }
+    </script>
+    
